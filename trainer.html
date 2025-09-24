@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Math Matching</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f6fbfb;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #164a4a;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 300px;
+        }
+
+        .item {
+            background: #ffffff;
+            border: 2px solid #7cc6c6;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: grab;
+            transition: transform 0.2s, background-color 0.4s, border-color 0.4s;
+            box-shadow: 0 4px 12px rgba(20, 40, 40, 0.1);
+            
+            /* Фиксированный размер для одинаковых квадратов */
+            width: 250px;
+            height: 70px;
+            
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item.drag-over {
+            border-color: #5aa9a9;
+            box-shadow: 0 4px 16px rgba(90, 169, 169, 0.4);
+        }
+        
+        .item.incorrect {
+            border-color: #dc3545;
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            20%, 60% {
+                transform: translateX(-5px);
+            }
+            40%, 80% {
+                transform: translateX(5px);
+            }
+        }
+
+        .item.correct {
+            background-color: #d1e7dd;
+            border-color: #5aa9a9;
+            cursor: default;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+
+    <h2>🔗 Match the Items</h2>
+
+    <div class="container">
+        <div id="terms" class="column"></div>
+        <div id="expressions" class="column"></div>
+    </div>
+
+    <script>
+        const pairs = [
+            { term: "Quadratic equation", expression: "$$ax^2 + bx + c = 0$$", id: 1 },
+            { term: "Polynomial", expression: "$$P(x) = a_n x^n + \\dots + a_0$$", id: 2 },
+            { term: "Coefficients", expression: "$$a, b, c$$", id: 3 },
+            { term: "Variable", expression: "$$x$$", id: 4 },
+            { term: "Degree (of a polynomial)", expression: "$$n$$", id: 5 }
+        ];
+
+        const termsContainer = document.getElementById('terms');
+        const expressionsContainer = document.getElementById('expressions');
+        let draggedItem = null;
+        let matchedCount = 0;
+
+        // Shuffle expressions to randomize the order
+        const shuffledPairs = [...pairs].sort(() => Math.random() - 0.5);
+
+        function createElements() {
+            // Create draggable terms
+            pairs.forEach(pair => {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.textContent = pair.term;
+                item.setAttribute('draggable', true);
+                item.setAttribute('data-id', pair.id);
+                item.addEventListener('dragstart', (e) => {
+                    draggedItem = e.target;
+                    setTimeout(() => draggedItem.style.opacity = '0.5', 0);
+                });
+                item.addEventListener('dragend', () => {
+                    draggedItem.style.opacity = '1';
+                    draggedItem = null;
+                });
+                termsContainer.appendChild(item);
+            });
+
+            // Create droppable expressions
+            shuffledPairs.forEach(pair => {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.setAttribute('data-id', pair.id);
+                item.innerHTML = pair.expression;
+                item.addEventListener('dragover', (e) => e.preventDefault());
+                item.addEventListener('dragenter', (e) => {
+                    e.preventDefault();
+                    if (!item.classList.contains('correct')) {
+                        item.classList.add('drag-over');
+                    }
+                });
+                item.addEventListener('dragleave', () => item.classList.remove('drag-over', 'incorrect'));
+                item.addEventListener('drop', (e) => {
+                    item.classList.remove('drag-over');
+                    const termId = draggedItem.getAttribute('data-id');
+                    const expressionId = item.getAttribute('data-id');
+
+                    if (termId === expressionId) {
+                        item.classList.add('correct');
+                        draggedItem.classList.add('correct');
+                        draggedItem.setAttribute('draggable', false);
+                        
+                        item.innerHTML = draggedItem.textContent;
+                        draggedItem.remove();
+                        
+                        matchedCount++;
+                        if (matchedCount === pairs.length) {
+                            setTimeout(() => alert('Congratulations! All pairs matched.'), 300);
+                        }
+                    } else {
+                        item.classList.add('incorrect');
+                    }
+                });
+                expressionsContainer.appendChild(item);
+            });
+        }
+
+        createElements();
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "\\[", right: "\\]", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false}
+                ]
+            });
+        });
+    </script>
+</body>
+</html>
